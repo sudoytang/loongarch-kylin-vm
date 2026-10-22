@@ -18,3 +18,4 @@ fw/*_VARS.fd
 *.qcow2*
 fw/0c2930a_*
 fw/764be21_*
+hostcache/
