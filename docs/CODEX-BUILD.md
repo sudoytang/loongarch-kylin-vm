@@ -24,3 +24,13 @@ Installed from pkg.loongnix.cn DaoXiangHu-stable via `dpkg -i --force-depends` (
 - 280 of ~1033 units compiled after ~65 min (4 jobs, TCG). openssl-sys 0.9.111, ring 0.17.14 and aws-lc-sys 0.45.0 build scripts all passed (hyper-tls, aws-lc-rs compile after them). No new errors.
 - ETA: several hours more; the large codex-* crates come last and are slowest.
 - Check: `./sertype.py 'clear; grep -c Compiling ~/codex-build/build.log; tail -2 ~/codex-build/build.log; tail -3 ~/build-codex.out' 10; tail -c 600 serial.log`
+
+## CROSS: x86_64 host -> old-world loongarch64 (ABI1.0)
+Toolchains (both exist, official Loongnix):
+- Rust: https://rust-lang.loongnix.cn/dist/1.99.0/2026-10-09/ has `rust-1.99.0-x86_64-unknown-linux-gnu.tar.xz` (rustc 1.99.0 a4d5d3f0e, same commit as the native guest rustc, LLVM 22.1.8) and `rust-std-1.99.0-loongarch64-unknown-linux-gnu.tar.xz`. Install both with `install.sh --prefix=/workspace/cross/rust`. (No .sha256 files are published there; they return 404.) The Loongnix builder-config shows the native toolchain itself was cross-built this way with `loongarch64-linux-gnu-gcc`.
+- GCC: https://ftp.loongnix.cn/toolchain/gcc/release/loongarch/gcc8/loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.6.tar.xz (md5 OK). It ships binutils 2.31.1, gcc 8.3.0, glibc 2.28 and a full sysroot, so no guest sysroot is needed.
+- OpenSSL: extract libssl-dev + libssl1.1 1.1.1d-0+lnd.13 debs (pkg.loongnix.cn) into `/workspace/cross/ossl`, copy `usr/include/loongarch64-linux-gnu/openssl/*` into `usr/include/openssl/`, and set OPENSSL_DIR/LIB_DIR/INCLUDE_DIR.
+- aws-lc-sys 0.45, ring and openssl-sys build scripts all succeed with only CC/CXX/AR_loongarch64_unknown_linux_gnu set; no cmake is needed on the host.
+- Script: `scripts/build-codex-cross.sh` (uses the vendored tree in hostcache/codex/codex-rs, target dir /workspace/cross/target). Run it detached: `JOBS=4 setsid nohup ./build-cross.sh > cross.log 2>&1 &`
+- Timing: 486 units in about 11 min with 4 jobs (the host is shared with the running TCG VM).
+- INCIDENT: the host has 16 GB RAM and no swap. Running the cross build with -j4 next to the 7G TCG VM made the host OOM killer kill qemu at 2026-10-22 23:57 (UTC+8), which stopped the in-guest native build. The guest target dir is on the qcow2, so a rerun of build-codex.sh resumes it. Later, rustc for codex_core (about 4 GB RSS) was OOM-killed too. Rule: never run the cross build and the VM at the same time, or use JOBS<=2 with a smaller VM MEM. The cross build was restarted with JOBS=2 at 00:35 (UTC+8) and the log is /workspace/cross/cross2.log.
