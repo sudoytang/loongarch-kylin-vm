@@ -5,10 +5,12 @@
 #   VM_PASSWORD  required; password set for users kylin and root
 #   TARGET_DISK  target disk (default: /dev/vda)
 set -ex
+trap 'echo INSTALL_FAILED' ERR
 D=${TARGET_DISK:-/dev/vda}
 PW=${VM_PASSWORD:?set VM_PASSWORD before running}
 BL="console=tty0 console=ttyS0,115200 initcall_blacklist=nct6102_gpio_setup,loongson_ls7a_hwmon_init modprobe.blacklist=parport_pc,it87"
 KVER=$(uname -r)
+umount -lR /mnt 2>/dev/null || true; sleep 2   # allow re-running after a failed attempt
 
 parted -s $D mklabel gpt mkpart ESP fat32 1MiB 513MiB set 1 esp on mkpart root ext4 513MiB 100%
 sleep 2
@@ -30,7 +32,7 @@ echo kylin-vm > /mnt/etc/hostname
 
 # chpasswd is rejected by Kylin's PAM password-quality rules, so set crypt hashes directly
 HASH=$(python3 -c "import crypt,sys; print(crypt.crypt(sys.argv[1], crypt.METHOD_SHA512))" "$PW")
-REMOVE="$(awk '{print $1}' /cdrom/casper/filesystem.manifest-remove 2>/dev/null) casper lupin-casper"
+REMOVE=$(echo $(awk '{print $1}' /cdrom/casper/filesystem.manifest-remove 2>/dev/null) casper lupin-casper)   # echo joins lines
 
 chroot /mnt /bin/bash -ex <<CH
 for p in $REMOVE; do dpkg -P --force-depends \$p || true; done
