@@ -18,3 +18,9 @@ Installed from pkg.loongnix.cn DaoXiangHu-stable via `dpkg -i --force-depends` (
 - libssl-dev 1.1.1d-0+lnd.13 (guest runtime is libssl1.1 1.1.1f-1kylin2.23k0.4; same 1.1.1 ABI, so --force-depends is safe for headers + libssl.so symlink)
 - pkg-config 0.29-6.1
 - cmake 3.13.4-1.lnd.2, cmake-data, librhash0 1.3.8 (other cmake deps already present)
+
+## Status 2026-10-22 22:10 (UTC+8)
+- Build runs detached in the guest (`setsid` bash ~/build-codex.sh, PPID 1, no tty), so it survives the serial session / host task ending. Log: `~/codex-build/build.log` (top errors lines 1-46 are from the earlier run before the libc6-dev fix; ignore). `CODEX_BUILD_DONE` is printed to `~/build-codex.out` at the end.
+- 280 of ~1033 units compiled after ~65 min (4 jobs, TCG). openssl-sys 0.9.111, ring 0.17.14 and aws-lc-sys 0.45.0 build scripts all passed (hyper-tls, aws-lc-rs compile after them). No new errors.
+- ETA: several hours more; the large codex-* crates come last and are slowest.
+- Check: `./sertype.py 'clear; grep -c Compiling ~/codex-build/build.log; tail -2 ~/codex-build/build.log; tail -3 ~/build-codex.out' 10; tail -c 600 serial.log`
