@@ -1,0 +1,20 @@
+===V===
+Linux kylin-vm 5.4.18-142-generic #131-KYLINOS SMP Thu Mar 27 03:19:17 UTC 2025 loongarch64 loongarch64 loongarch64 GNU/Linux
+lrwxrwxrwx 1 root root 37 Apr 16  2024 /lib64/ld.so.1 --> /lib/loongarch64-linux-gnu/ld-2.28.so
+4
+NAME="Kylin"
+VERSION="银河麒麟桌面操作系统V10 SP1"
+VERSION_US="Kylin Linux Desktop V10 SP1"
+ID=kylin
+ID_LIKE=debian
+PRETTY_NAME="Kylin V10 SP1"
+VERSION_ID="v10"
+HOME_URL="http://www.kylinos.cn/"
+SUPPORT_URL="http://www.kylinos.cn/support/technology.html"
+BUG_REPORT_URL="http://www.kylinos.cn/"
+PRIVACY_POLICY_URL="http://www.kylinos.cn"
+VERSION_CODENAME=kylin
+UBUNTU_CODENAME=kylin
+PROJECT_CODENAME=V10SP1
+KYLIN_RELEASE_ID="2503"
+===END===

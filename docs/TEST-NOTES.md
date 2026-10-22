@@ -1,0 +1,15 @@
+# Test notes (fresh clone, 2026-10-22 16:31 UTC+8)
+- clone: PASS
+- fetch-iso.sh: PASS (51 s, ~84 MB/s, MD5 OK, byte-identical to earlier ISO)
+- shut down old VM cleanly via serial 'sudo poweroff'
+- build-disk.sh started 16:33
+- live ISO boot -> login + install start: ~3.5 min (SMP4 Debian fw)
+- BUG 1: guest/install.sh failed after the rootfs copy: 'syntax error near unexpected token ubiquity-casper' (the package list contained newlines inside the chroot heredoc's for-loop). Fixed with tr '\n' ' '; also added umount -R /mnt at start so it can be re-run. Re-ran install in the same live session at - BUG 1: guest/install.sh failed after the rootfs copy: 'syntax error near unexpected token ubiquity-casper' (newline-separated package list inside the chroot heredoc for-loop). Fixed with tr; added 'umount -R /mnt' at start so it can be re-run. Re-ran install in the same live session at 17:02 (typed manually; build-disk.sh kept polling).
+- BUG 1b: re-run failed with 'Partition(s) on /dev/vda are being used' (bind mounts kept vda busy); changed to 'umount -lR /mnt'. Re-run #2 started 17:13.
+- BUG 1 (again): the `tr '\n' ' '` fix still left newlines in the guest's REMOVE (cause unclear). Replaced with `REMOVE=$(echo $(awk ...) casper lupin-casper)`, which word-splits and joins the lines.
+- BUG 2: build-disk.sh polled forever when install.sh failed. install.sh now has `trap 'echo INSTALL_FAILED' ERR`, and build-disk.sh exits 1 when it sees that. Poweroff now answers the sudo prompt and waits for QEMU to exit before `quit`. Progress lines now carry timestamps.
+- 17:22 full unattended build-disk.sh run #2 started (fixed scripts), log /tmp/build2.log
+- Unattended build-disk.sh run #2 (fixed scripts): live boot 17:22 -> login/install start 17:26 -> INSTALL_DONE 17:39 (about 17 min total, SMP=4, Debian fw). Ended with BUILD_EXIT=2 because of BUG 3.
+- BUG 3: `( cd guest && server & echo $! > ../.http.pid )` wrote the pid file one directory ABOVE the repo (the `&` backgrounds the whole `cd && server` list, so `echo` runs in the original cwd). Cleanup then failed under `set -e` (exit 2) and left the HTTP server running. Fixed: `python3 -m http.server 8000 --directory guest`, pid in ./.http.pid, guarded cleanup.
+- run.sh boot of the new disk: PASS. Login prompt after 48 s, `smp: Brought up 1 node, 4 CPUs`.
+- Login kylin with the VM_PASSWORD used at build time over serial: PASS. Verify output in verify-test.txt (5.4.18-142, /lib64/ld.so.1 -> ld-2.28.so, nproc 4, KYLIN_RELEASE_ID 2503). No it87 oops (blacklist works).

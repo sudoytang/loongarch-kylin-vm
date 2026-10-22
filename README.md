@@ -26,7 +26,7 @@ sudo apt install qemu-system-misc qemu-utils socat python3 imagemagick
 ## Quickstart
 ```bash
 scripts/fetch-iso.sh        # download the official ISO and check its MD5
-scripts/build-disk.sh       # unattended headless install into kylin.qcow2 (~1 h under TCG)
+scripts/build-disk.sh       # unattended headless install into kylin.qcow2 (~17 min with SMP=4)
 ./run.sh                    # boot the installed system
 ```
 Then:
