@@ -34,3 +34,27 @@ Toolchains (both exist, official Loongnix):
 - Script: `scripts/build-codex-cross.sh` (uses the vendored tree in hostcache/codex/codex-rs, target dir /workspace/cross/target). Run it detached: `JOBS=4 setsid nohup ./build-cross.sh > cross.log 2>&1 &`
 - Timing: 486 units in about 11 min with 4 jobs (the host is shared with the running TCG VM).
 - INCIDENT: the host has 16 GB RAM and no swap. Running the cross build with -j4 next to the 7G TCG VM made the host OOM killer kill qemu at 2026-10-22 23:57 (UTC+8), which stopped the in-guest native build. The guest target dir is on the qcow2, so a rerun of build-codex.sh resumes it. Later, rustc for codex_core (about 4 GB RSS) was OOM-killed too. Rule: never run the cross build and the VM at the same time, or use JOBS<=2 with a smaller VM MEM. The cross build was restarted with JOBS=2 at 00:35 (UTC+8) and the log is /workspace/cross/cross2.log.
+
+## CROSS success (2026-10-24, Debian build host)
+
+Built on an x86_64 Debian 13 machine, not under TCG.
+Result binary: `artifacts/codex` (also saved as `~/cross/codex-loongarch64` on the build host).
+
+Verified:
+- ELF LoongArch 64-bit LSB pie, stripped
+- interpreter `/lib64/ld.so.1` (old-world)
+- max GLIBC symbol `GLIBC_2.28` (matches Kylin V10 SP1)
+
+### Host setup that worked
+- Rust 1.99.0 from Loongnix: `rust-1.99.0-x86_64-unknown-linux-gnu` + `rust-std-1.99.0-loongarch64-unknown-linux-gnu`
+- GCC: `loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.6` (glibc 2.28 sysroot)
+- OpenSSL headers: libssl-dev 1.1.1d unpacked to `ossl/`
+- Codex source: tag `rust-v0.163.0`; delete `rust-toolchain.toml` (wants 1.99.1; Loongnix has 1.99.0)
+- RAM: ~7 GB + ~23 GB swap; build with `-j2`, `CARGO_PROFILE_RELEASE_DEBUG=0`, LTO off, codegen-units 16
+- Mainland China network: GitHub git deps stall easily. Prefer `cargo vendor` elsewhere and `--offline`, or China crates mirrors (`rsproxy.cn` / USTC).
+
+### Two gotchas fixed during the successful run
+1. **Host `rust-lld` SIGSEGV.** Cross builds still compile host `build.rs` / proc-macros. Rust 1.99 defaults to `-fuse-ld=lld` (bundled `rust-lld`), which segfaulted on this Debian host. Workaround: wrap `cc`/`c++` to drop `-fuse-ld=lld` and force GNU `ld.bfd` (see `scripts/build-codex-cross.sh`).
+2. **Final link `relocation truncated to fit`** against `memcpy` inside `aws-lc-sys`. The release binary is too large for the default small/normal code model. Loongson gcc 8.3 does **not** accept `-mcmodel=medium` (only `tiny`/`normal`/`large`/`extreme`). Fix: `export CFLAGS_loongarch64_unknown_linux_gnu='-mcmodel=large'` (and matching `RUSTFLAGS` `--codegen code-model=large` / target linker flags). Rebuild `ring` / `aws-lc-sys` after changing the model; a plain relink is not enough.
+
+Smoke in the Kylin VM (this repo's `kylin.qcow2`): `codex --version` and a no-API-key launch with `--dangerously-bypass-approvals-and-sandbox`. See `docs/CODEX-CONFIG.md` for a DeepSeek / OpenAI-compatible `~/.codex/config.toml` example.

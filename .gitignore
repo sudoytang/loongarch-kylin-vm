@@ -19,3 +19,8 @@ fw/*_VARS.fd
 fw/0c2930a_*
 fw/764be21_*
 hostcache/
+artifacts/codex
+artifacts/codex.gz
+artifacts/COPY_OK
+artifacts/*.tar
+artifacts/*.tar.gz

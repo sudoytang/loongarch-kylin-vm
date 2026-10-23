@@ -1,0 +1,27 @@
+# Codex old-world LoongArch verify (Kylin V10 SP1 VM)
+# Host time zone: Asia/Shanghai (UTC+8)
+# Guest run: 2026-10-24 ~02:00 UTC+8
+
+host$file artifacts/codex
+# (file(1) not installed on box; remote file(1) said:)
+# ELF 64-bit LSB pie executable, LoongArch, version 1 (SYSV), dynamically linked,
+# interpreter /lib64/ld.so.1, for GNU/Linux 4.15.0, stripped
+
+host$ readelf -l artifacts/codex | grep interpreter
+      [Requesting program interpreter: /lib64/ld.so.1]
+
+host$ objdump -T artifacts/codex | grep -oE 'GLIBC_[0-9.]+' | sort -Vu | tail -1
+GLIBC_2.28
+
+guest$ uname -m; ls -l /lib64/ld.so.1
+loongarch64
+/lib64/ld.so.1
+
+guest$ ~/codex --version
+codex-cli 0.163.0
+
+guest$ unset OPENAI_API_KEY DEEPSEEK_API_KEY
+guest$ timeout 45 ~/codex --dangerously-bypass-approvals-and-sandbox exec "echo smoke"
+# Binary starts, creates a session, then fails at the API with HTTP 401 Unauthorized
+# (no key). No dynamic-linker / GLIBC / Landlock crash. SMOKE_EXIT observed: 0
+# after the 401 reconnect loop finished.

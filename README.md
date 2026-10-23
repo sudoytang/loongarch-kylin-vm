@@ -139,3 +139,6 @@ Other notes:
 | `docs/verify.txt` | Proof output from the installed guest |
 | `docs/installed-desktop.png` | Login screen screenshot |
 | `logs/boot-smp4-debian-fw.log` | Trimmed serial boot log with `-smp 4` |
+
+## OpenAI Codex CLI (old-world LoongArch binary)
+A cross-built `codex` for this ABI1.0 / glibc 2.28 image lives in `artifacts/codex` after a successful build (see `docs/CODEX-BUILD.md`). Config example for DeepSeek / OpenAI-compatible backends: `docs/CODEX-CONFIG.md`.
